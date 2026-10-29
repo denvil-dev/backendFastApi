@@ -76,15 +76,17 @@ def detokinizador(
   except jwt.InvalidTokenError:
     raise HTTPException(status_code=401, detail="Token inválido")
     
+ROLES_PERMITIDOS = {
+    "Analista financiero",
+    "AnalistaFinanciero",
+    "Administrador",
+}
+
+
 def verificar_rol(payload: dict = Depends(decode_token)):
     rol = payload.get(ROLE_CLAIM)
-    if rol != "AnalistaFinanciero" and rol != "Administrador":
+    if rol not in ROLES_PERMITIDOS:
         raise HTTPException(
             status_code=403, detail="No eres analista, no puedes hacer esto "
         )
     return payload
-
-resultado = createToken()
-token  = resultado ["token"]
-print (token)
- 

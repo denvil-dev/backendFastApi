@@ -14,7 +14,7 @@ class lotes_carga(Base):
     nombre_archivo : Mapped[str] = mapped_column(String, nullable=False)
     fecha_carga: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     registros_totales: Mapped[int]= mapped_column(Integer, nullable=False)
-    registros_validos:  Mapped[Decimal]= mapped_column(Numeric(5,2), nullable=False)
+    registros_validos: Mapped[int] = mapped_column(Integer, nullable=False)
     id_usuario: Mapped[Optional[str]] = mapped_column (Uuid, nullable=False)
 class auditorias(Base):
     __tablename__ = "auditorias"

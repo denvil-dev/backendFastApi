@@ -54,7 +54,7 @@ async def validar_matriz(rol: str = Depends(verificar_rol), file: UploadFile = F
         return {
             "mensaje": "CSV procesado correctamente",
             "lote": lote_id,
-            "nombre_archivo": file.file,
+            "nombre_archivo": file.filename,
             "ruta": str(ruta_archivo),
             "total_filas": resultado["total_filas"],
             "columnas_detectadas": resultado["columnas_detectadas"],

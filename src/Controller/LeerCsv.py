@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from src.Config.JwtConfig import decode_token
 import polars as pl
 from Config.DatabaseConfig import SessionRolA,SessionRolB
+from Controller.ProcesarAnalitica import procesar_analitica
 from Models.CsvModel import lotes_carga, ext_matriz_financiera_entidades, auditorias
 from sqlalchemy import select, insert
 from uuid import uuid4
@@ -33,14 +34,15 @@ def registrarCsv(
         nombre_archivo=nombreArchivo,
         fecha_carga=datetime.now(timezone.utc),
         registros_totales=len(df),
-        registros_validos=0,
+        registros_validos=len(df),
         id_usuario=id_usuario,
     )
     session_etl.add(nuevo_lote)
     session_etl.flush()
 
     for fila in filas:
-      fila["id_lote"] =  str(id_lote)
+      fila["id_cruda"] = str(uuid4())
+      fila["id_lote"] = str(id_lote)
 
     session_etl.execute(
         insert(ext_matriz_financiera_entidades),
@@ -48,6 +50,8 @@ def registrarCsv(
     )
 
     session_etl.commit()
+
+  procesar_analitica(id_lote)
 
 
 def registrar_intento(nombre, resultado, errores=None):
@@ -91,6 +95,7 @@ async def procesar_csv(id_usuario: str, lote_id: uuid4, contenido: bytes, nombre
             "ebitda",
             "ingresos",
             "activo_corriente",
+            "pasivo_corriente",
             "inventarios",
             "pasivo_total",
             "ebit",
@@ -143,6 +148,7 @@ async def procesar_csv(id_usuario: str, lote_id: uuid4, contenido: bytes, nombre
             "ebitda",
             "ingresos",
             "activo_corriente",
+            "pasivo_corriente",
             "inventarios",
             "pasivo_total",
             "ebit",
@@ -231,7 +237,7 @@ async def procesar_csv(id_usuario: str, lote_id: uuid4, contenido: bytes, nombre
                 {
                     "columna": "periodo",
                     "tipo": "formato_invalido",
-                    "formato_esperado": "YYYY/MM, por ejemplo 2025/03",
+                    "formato_esperado": "YYYY-MM, por ejemplo 2025-03",
                     "filas": [
                         i + 2
                         for i, valor in enumerate(periodo_invalido.to_list())

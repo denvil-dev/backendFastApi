@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from Config.DatabaseConfig import SessionRolB
 from Models.RankingModel import VEntidadesCotizacion, VRanking
 from Schemas.RankingSchema import (
@@ -39,6 +39,10 @@ async def getRanking(
           VEntidadesCotizacion.variacion_pct.label("variacionPct"),
       ).join(VRanking, VEntidadesCotizacion.id_entidad == VRanking.id_entidad)
 
+      # Solo la fotografía más reciente del ranking.
+      fecha_maxima = select(func.max(VRanking.fecha)).scalar_subquery()
+      stmt = stmt.where(VRanking.fecha == fecha_maxima)
+
       # 1. Filtros
       if sector:
         stmt = stmt.where(VEntidadesCotizacion.sector == sector)
@@ -59,14 +63,16 @@ async def getRanking(
       else:
         stmt = stmt.order_by(desc(columna_seleccionada))
 
+      total = session.scalar(select(func.count()).select_from(stmt.subquery()))
+
       # 3. Paginación aplicándose a la sentencia SQL de SQLAlchemy
       stmt = stmt.limit(limit).offset(offset)
 
       # Ejecución
       result = session.execute(stmt).mappings().all()
-      items = [dict(row) for row in result]
+      items = [{**dict(row), "cambioPosicion": 0} for row in result]
 
-      return {"periodo": periodo.value, "total": len(items), "items": items}
+      return {"periodo": periodo.value, "total": total or 0, "items": items}
 
   except Exception as e:
     return JSONResponse(

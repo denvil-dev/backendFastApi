@@ -1,4 +1,6 @@
 from enum import Enum
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -31,7 +33,7 @@ class DirEnum(str, Enum):
 class RankingItem(BaseModel):
   posicion: int
   cambioPosicion: int  # Positivo = subió, negativo = bajó, 0 = igual
-  entidadId: int
+  entidadId: UUID
   entidad: str
   sector: str
   ic: float
