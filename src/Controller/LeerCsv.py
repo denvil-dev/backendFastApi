@@ -1,6 +1,6 @@
 import io
 from datetime import datetime, timezone
-from Config.JwtConfig import decode_token
+from src.Config.JwtConfig import decode_token
 import polars as pl
 from Config.DatabaseConfig import SessionLocal
 from Models.CsvModel import lotes_carga, ext_matriz_financiera_entidades, auditorias

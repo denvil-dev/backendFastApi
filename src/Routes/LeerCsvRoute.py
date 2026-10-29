@@ -8,7 +8,7 @@ csv = APIRouter()
 
 
 @csv.post("/v1/validar-matriz")
-async def validar_matriz( file: UploadFile = File(...)):
+async def validar_matriz(rol: str = Depends(verificar_rol), file: UploadFile = File(...)):
     lote_id = str(uuid4())
 
     # 1. Validar extensión

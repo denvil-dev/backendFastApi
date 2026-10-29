@@ -1,4 +1,4 @@
-from Config.JwtConfig import decode_token
+from src.Config.JwtConfig import decode_token
 
 import os 
 
