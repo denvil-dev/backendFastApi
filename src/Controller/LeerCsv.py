@@ -40,7 +40,7 @@ def registrarCsv(
     session_etl.flush()
 
     for fila in filas:
-      fila["id_lote"] = id_lote
+      fila["id_lote"] =  str(id_lote)
 
     session_etl.execute(
         insert(ext_matriz_financiera_entidades),
@@ -48,6 +48,8 @@ def registrarCsv(
     )
 
     session_etl.commit()
+
+
 def registrar_intento(nombre, resultado, errores=None):
     bitacora.append(
         {
@@ -253,7 +255,15 @@ async def procesar_csv(id_usuario: str, lote_id: uuid4, contenido: bytes, nombre
                     ],
                 }
             )
-
+        if len(df) == 0:
+            errores.append(
+                {"tipo": "archivo_vacio", "detalle": "El archivo CSV no contiene filas de datos."}
+            )
+            return {
+                "errores": errores,
+                "total_filas": 0,
+                "columnas_detectadas": df.columns,
+            }
         if len(errores) == 0:
 
             registrarCsv(id_usuario, lote_id, nombre_archivo, df)

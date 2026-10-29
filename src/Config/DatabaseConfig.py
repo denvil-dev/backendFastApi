@@ -10,8 +10,8 @@ DATABASE_URL_A = os.getenv("DATABASE_URL_A")
 DATABASE_URL_B = os.getenv("DATABASE_URL_B")
 
 # 2. Motores independientes para cada rol
-engine_a = create_engine(DATABASE_URL_A)
-engine_b = create_engine(DATABASE_URL_B)
+engine_a = create_engine(DATABASE_URL_A, pool_pre_ping=True)
+engine_b = create_engine(DATABASE_URL_B, pool_pre_ping=True)
 
 # 3. Fábricas de sesiones separadas
 SessionRolA = sessionmaker(bind=engine_a)
