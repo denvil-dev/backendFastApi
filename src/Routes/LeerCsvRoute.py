@@ -9,6 +9,8 @@ csv = APIRouter()
 
 @csv.post("/v1/validar-matriz")
 async def validar_matriz(rol: str = Depends(verificar_rol), file: UploadFile = File(...)):
+    id_usuario = rol["sub"]
+    print (id_usuario)
     lote_id = str(uuid4())
 
     # 1. Validar extensión
@@ -32,7 +34,7 @@ async def validar_matriz(rol: str = Depends(verificar_rol), file: UploadFile = F
             raise HTTPException(status_code=400, detail="El archivo CSV está vacío.")
 
         # 4. Delegar el procesamiento al controlador
-        resultado = await procesar_csv(lote_id, contenido_bytes, file.filename)
+        resultado = await procesar_csv(id_usuario,lote_id, contenido_bytes, file.filename)
 
         if resultado["errores"]:
             raise HTTPException(

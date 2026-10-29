@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy import asc, desc, select
-from Config.DatabaseConfig import SessionLocal
+from Config.DatabaseConfig import SessionRolB
 from Models.RankingModel import VEntidadesCotizacion, VRanking
 from Schemas.RankingSchema import (
     DimensionEnum,
@@ -29,7 +29,7 @@ async def getRanking(
     ),  # <-- NUEVO (Paginación)
 ):
   try:
-    with SessionLocal() as session:
+    with SessionRolB() as session:
       stmt = select(
           VRanking.posicion_general.label("posicion"),
           VEntidadesCotizacion.id_entidad.label("entidadId"),

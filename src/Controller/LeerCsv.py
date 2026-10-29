@@ -2,50 +2,52 @@ import io
 from datetime import datetime, timezone
 from src.Config.JwtConfig import decode_token
 import polars as pl
-from Config.DatabaseConfig import SessionLocal
+from Config.DatabaseConfig import SessionRolA,SessionRolB
 from Models.CsvModel import lotes_carga, ext_matriz_financiera_entidades, auditorias
 from sqlalchemy import select, insert
 from uuid import uuid4
 
 # Bitácora temporal: se pierde al reiniciar el servidor
 bitacora = []
+def registrarCsv(
+    id_usuario: str, id_lote: uuid4, nombreArchivo: str, df: pl.DataFrame
+):
+  filas = df.to_dicts()
 
+  # 1. Registrar la auditoría usando SessionRolB (rol_backend - esquema seguridad)
+  with SessionRolB() as session_backend:
+    auditoria = auditorias(
+        id_bitacora=uuid4(),
+        accion="Subir",
+        detalle="Usuario intento subir matriz financiera cruda",
+        fecha_evento=datetime.now(timezone.utc),
+        id_usuario=id_usuario,
+    )
+    session_backend.add(auditoria)
+    session_backend.commit()
 
-def registrarCsv(id_lote: uuid4, nombreArchivo: str, df: pl.DataFrame):
-    filas = df.to_dicts()
+  # 2. Registrar el lote y los datos masivos usando SessionRolA (rol_etl - esquema cruda)
+  with SessionRolA() as session_etl:
+    nuevo_lote = lotes_carga(
+        id_lote=id_lote,
+        nombre_archivo=nombreArchivo,
+        fecha_carga=datetime.now(timezone.utc),
+        registros_totales=len(df),
+        registros_validos=0,
+        id_usuario=id_usuario,
+    )
+    session_etl.add(nuevo_lote)
+    session_etl.flush()
 
-    with SessionLocal() as session:
-        nuevo_lote = lotes_carga(
-            id_lote=id_lote,
-            nombre_archivo=nombreArchivo,
-            fecha_carga=datetime.now(timezone.utc),
-            registros_totales=len(df),
-            registros_validos=0,
-            id_usuario="7fd06165-38ea-4f89-bcc6-6a146aad670e",
-        )
+    for fila in filas:
+      fila["id_lote"] = id_lote
 
-        auditoria = auditorias(
-            id_bitacora=uuid4(),
-            accion="Subir",
-            detalle="Usuario intento subir matriz financiera cruda",
-            fecha_evento=datetime.now(timezone.utc),  # <--- Recomendable con UTC
-            id_usuario="7fd06165-38ea-4f89-bcc6-6a146aad670e",
-        )
-        session.add(auditoria)
-        session.add(nuevo_lote)
-        session.flush()
+    session_etl.execute(
+        insert(ext_matriz_financiera_entidades),
+        filas,
+    )
 
-        for fila in filas:
-            fila["id_lote"] = id_lote
-
-        session.execute(
-            insert(ext_matriz_financiera_entidades),
-            filas,
-        )
-
-        session.commit()
-
-
+    session_etl.commit()
 def registrar_intento(nombre, resultado, errores=None):
     bitacora.append(
         {
@@ -57,7 +59,7 @@ def registrar_intento(nombre, resultado, errores=None):
     )
 
 
-async def procesar_csv(lote_id: uuid4, contenido: bytes, nombre_archivo: str):
+async def procesar_csv(id_usuario: str, lote_id: uuid4, contenido: bytes, nombre_archivo: str):
     print(nombre_archivo)
     errores = []
 
@@ -254,7 +256,7 @@ async def procesar_csv(lote_id: uuid4, contenido: bytes, nombre_archivo: str):
 
         if len(errores) == 0:
 
-            registrarCsv(lote_id, nombre_archivo, df)
+            registrarCsv(id_usuario, lote_id, nombre_archivo, df)
 
         return {
             "errores": errores,
