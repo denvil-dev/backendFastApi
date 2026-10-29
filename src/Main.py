@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from Routes.LeerCsvRoute import csv
-from Routes.RankingRoute import ranking
+from src.Routes.LeerCsvRoute import csv
+from src.Routes.RankingRoute import ranking
 app = FastAPI()
 
 
