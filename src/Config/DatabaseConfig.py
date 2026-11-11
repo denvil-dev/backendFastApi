@@ -12,17 +12,17 @@ env_path = BASE_DIR / ".env"
 load_dotenv(dotenv_path=env_path)
 
 # Leer las conexiones locales usadas por los roles de la aplicación.
-DATABASE_LOCALA = os.getenv("DATABASE_LOCALA")
-DATABASE_LOCALB = os.getenv("DATABASE_LOCALB")
+DATABASE_URL_A = os.getenv("DATABASE_URL_A")
+DATABASE_URL_B = os.getenv("DATABASE_URL_B")
 
-if not DATABASE_LOCALA:
-    raise ValueError(f"No se encontró DATABASE_LOCALA en: {env_path}")
-if not DATABASE_LOCALB:
-    raise ValueError(f"No se encontró DATABASE_LOCALB en: {env_path}")
+if not DATABASE_URL_A:
+    raise ValueError(f"No se encontró DATABASE_URL_A en: {env_path}")
+if not DATABASE_URL_B:
+    raise ValueError(f"No se encontró DATABASE_URL_B en: {env_path}")
 
 # Crear motores únicamente para las bases de datos locales.
-engine_local_a = create_engine(DATABASE_LOCALA, pool_pre_ping=True)
-engine_local_b = create_engine(DATABASE_LOCALB, pool_pre_ping=True)
+engine_local_a = create_engine(DATABASE_URL_A, pool_pre_ping=True)
+engine_local_b = create_engine(DATABASE_URL_B, pool_pre_ping=True)
 
 # Mantener sesiones separadas para cada rol de acceso local.
 SessionRolA = sessionmaker(bind=engine_local_a)
