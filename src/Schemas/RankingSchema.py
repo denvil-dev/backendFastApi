@@ -31,8 +31,8 @@ class DirEnum(str, Enum):
 
 
 class RankingItem(BaseModel):
-  posicion: int
-  cambioPosicion: int  # Positivo = subió, negativo = bajó, 0 = igual
+  posicion: int | None  # None para Gerente / Directivo
+  cambioPosicion: int | None  # Positivo = subió, negativo = bajó, 0 = igual; None para Gerente / Directivo
   entidadId: UUID
   entidad: str
   sector: str

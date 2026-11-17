@@ -15,6 +15,9 @@ class lotes_carga(Base):
     fecha_carga: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     registros_totales: Mapped[int]= mapped_column(Integer, nullable=False)
     registros_validos: Mapped[int] = mapped_column(Integer, nullable=False)
+    estado_carga: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="Exitoso"
+    )
     id_usuario: Mapped[Optional[str]] = mapped_column (Uuid, nullable=False)
 class auditorias(Base):
     __tablename__ = "auditorias"

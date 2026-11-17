@@ -1,34 +1,30 @@
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-import os 
+import os
+from pathlib import Path
 from dotenv import load_dotenv
-load_dotenv()
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Obtener la ruta absoluta del archivo actual y calcular la raíz del proyecto.
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env_path = BASE_DIR / ".env"
+
+# Cargar las variables desde el archivo .env del proyecto.
+load_dotenv(dotenv_path=env_path)
+
+# Leer las conexiones locales usadas por los roles de la aplicación.
 DATABASE_URL_A = os.getenv("DATABASE_URL_A")
 DATABASE_URL_B = os.getenv("DATABASE_URL_B")
-# 1. URLs para cada usuario/rol
-DATABASE_URL_A = os.getenv("DATABASE_URL_A")
-DATABASE_URL_B = os.getenv("DATABASE_URL_B")
 
-# 2. Motores independientes para cada rol
-engine_a = create_engine(DATABASE_URL_A, pool_pre_ping=True)
-engine_b = create_engine(DATABASE_URL_B, pool_pre_ping=True)
+if not DATABASE_URL_A:
+    raise ValueError(f"No se encontró DATABASE_URL_A en: {env_path}")
+if not DATABASE_URL_B:
+    raise ValueError(f"No se encontró DATABASE_URL_B en: {env_path}")
 
-# 3. Fábricas de sesiones separadas
-SessionRolA = sessionmaker(bind=engine_a)
-SessionRolB = sessionmaker(bind=engine_b)
+# Crear motores únicamente para las bases de datos locales.
+engine_local_a = create_engine(DATABASE_URL_A, pool_pre_ping=True)
+engine_local_b = create_engine(DATABASE_URL_B, pool_pre_ping=True)
 
-# --- Ejemplo de uso para el Rol A ---
-try:
-    with engine_a.connect() as connection_a:
-        resultado_a = connection_a.execute(text("SELECT VERSION();")).fetchone()
-        print("Conexión Rol A exitosa:", resultado_a)
-except Exception as e:
-    print("Error en Rol A:", e)
-
-# --- Ejemplo de uso para el Rol B ---
-try:
-    with engine_b.connect() as connection_b:
-        resultado_b = connection_b.execute(text("SELECT VERSION();")).fetchone()
-        print("Conexión Rol B exitosa:", resultado_b)
-except Exception as e:
-    print("Error en Rol B:", e)
+# Mantener sesiones separadas para cada rol de acceso local.
+SessionRolA = sessionmaker(bind=engine_local_a)
+SessionRolB = sessionmaker(bind=engine_local_b)
+SessionLocal = sessionmaker(bind=engine_local_a)

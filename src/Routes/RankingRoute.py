@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
-from sqlalchemy import asc, desc, func, select
-from Config.DatabaseConfig import SessionRolB
-from Models.RankingModel import VEntidadesCotizacion, VRanking
+
+from Config.JwtConfig import ROLE_CLAIM, decode_token
+from Controller.Ranking import obtener_ranking
 from Schemas.RankingSchema import (
     DimensionEnum,
     DirEnum,
@@ -12,6 +12,15 @@ from Schemas.RankingSchema import (
 )
 
 ranking = APIRouter(prefix="/api/v1", tags=["Ranking"])
+
+ROLES_RANKING = {
+    "Administrador",
+    "Data Steward",
+    "Analista financiero",
+    "Gerente / Directivo",
+    "Auditor",
+}
+GERENTE = "Gerente / Directivo"
 
 
 @ranking.get("/ranking", response_model=RankingResponse)
@@ -23,65 +32,43 @@ async def getRanking(
     dir: DirEnum = Query(DirEnum.desc, description="Dirección: asc o desc"),
     limit: int = Query(
         50, ge=1, le=200, description="Cantidad de registros por página"
-    ),  # <-- NUEVO (Paginación)
-    offset: int = Query(
-        0, ge=0, description="Desplazamiento para la paginación"
-    ),  # <-- NUEVO (Paginación)
+    ),
+    offset: int = Query(0, ge=0, description="Desplazamiento para la paginación"),
+    payload: dict = Depends(decode_token),
 ):
-  try:
-    with SessionRolB() as session:
-      stmt = select(
-          VRanking.posicion_general.label("posicion"),
-          VEntidadesCotizacion.id_entidad.label("entidadId"),
-          VEntidadesCotizacion.nombre.label("entidad"),
-          VEntidadesCotizacion.sector,
-          VEntidadesCotizacion.ic,
-          VEntidadesCotizacion.variacion_pct.label("variacionPct"),
-      ).join(VRanking, VEntidadesCotizacion.id_entidad == VRanking.id_entidad)
+    rol = payload.get(ROLE_CLAIM)
+    if rol not in ROLES_RANKING:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "type": "about:blank",
+                "title": "Forbidden",
+                "status": 403,
+                "detail": "No tiene permiso",
+            },
+            media_type="application/problem+json",
+        )
 
-      # Solo la fotografía más reciente del ranking.
-      fecha_maxima = select(func.max(VRanking.fecha)).scalar_subquery()
-      stmt = stmt.where(VRanking.fecha == fecha_maxima)
+    try:
+        return obtener_ranking(
+            sector=sector,
+            dimension=dimension.value if dimension else None,
+            periodo=periodo.value,
+            orden=orden.value,
+            direccion=dir.value,
+            limit=limit,
+            offset=offset,
+            ocultar_posicion=rol == GERENTE,
+        )
 
-      # 1. Filtros
-      if sector:
-        stmt = stmt.where(VEntidadesCotizacion.sector == sector)
-
-      # 2. Ordenamiento
-      columnas_orden = {
-          "posicion": VRanking.posicion_general,
-          "entidad": VEntidadesCotizacion.nombre,
-          "sector": VEntidadesCotizacion.sector,
-          "ic": VEntidadesCotizacion.ic,
-          "variacionPct": VEntidadesCotizacion.variacion_pct,
-      }
-
-      columna_seleccionada = columnas_orden.get(orden.value, VRanking.ic)
-
-      if dir.value == "asc":
-        stmt = stmt.order_by(asc(columna_seleccionada))
-      else:
-        stmt = stmt.order_by(desc(columna_seleccionada))
-
-      total = session.scalar(select(func.count()).select_from(stmt.subquery()))
-
-      # 3. Paginación aplicándose a la sentencia SQL de SQLAlchemy
-      stmt = stmt.limit(limit).offset(offset)
-
-      # Ejecución
-      result = session.execute(stmt).mappings().all()
-      items = [{**dict(row), "cambioPosicion": 0} for row in result]
-
-      return {"periodo": periodo.value, "total": total or 0, "items": items}
-
-  except Exception as e:
-    return JSONResponse(
-        status_code=400,
-        content={
-            "type": "about:blank",
-            "title": "Bad Request",
-            "status": 400,
-            "detail": str(e),
-        },
-        media_type="application/problem+json",
-    )
+    except Exception as e:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "type": "about:blank",
+                "title": "Bad Request",
+                "status": 400,
+                "detail": str(e),
+            },
+            media_type="application/problem+json",
+        )

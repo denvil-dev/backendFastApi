@@ -2,8 +2,8 @@ import io
 from datetime import datetime, timezone
 from src.Config.JwtConfig import decode_token
 import polars as pl
-from Config.DatabaseConfig import SessionRolA,SessionRolB
-from Controller.ProcesarAnalitica import procesar_analitica
+from src.Config.DatabaseConfig import SessionRolA,SessionRolB
+from src.Controller.ProcesarAnalitica import procesar_analitica
 from Models.CsvModel import lotes_carga, ext_matriz_financiera_entidades, auditorias
 from sqlalchemy import select, insert
 from uuid import uuid4
@@ -35,6 +35,7 @@ def registrarCsv(
         fecha_carga=datetime.now(timezone.utc),
         registros_totales=len(df),
         registros_validos=len(df),
+        estado_carga="Exitoso",
         id_usuario=id_usuario,
     )
     session_etl.add(nuevo_lote)
@@ -52,6 +53,22 @@ def registrarCsv(
     session_etl.commit()
 
   procesar_analitica(id_lote)
+
+
+def registrarLoteFallido(id_usuario, id_lote, nombre_archivo, total_filas):
+    with SessionRolA() as session_etl:
+        session_etl.add(
+            lotes_carga(
+                id_lote=id_lote,
+                nombre_archivo=nombre_archivo,
+                fecha_carga=datetime.now(timezone.utc),
+                registros_totales=total_filas or 0,
+                registros_validos=0,
+                estado_carga="Fallido",
+                id_usuario=id_usuario,
+            )
+        )
+        session_etl.commit()
 
 
 def registrar_intento(nombre, resultado, errores=None):

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+﻿from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
@@ -15,17 +15,17 @@ class TblDatoFinanciero(Base):
 
     id_dato: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
     periodo: Mapped[date] = mapped_column(Date, nullable=False)
-    utilidad_neta: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    patrimonio: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    activos_totales: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    pasivo_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    activo_corriente: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    pasivo_corriente: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    inventarios: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    ebitda: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    ebit: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    ingresos: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
-    gastos_financieros: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2))
+    utilidad_neta: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    patrimonio: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    activos_totales: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    pasivo_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    activo_corriente: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    pasivo_corriente: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    inventarios: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    ebitda: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    ebit: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    ingresos: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
+    gastos_financieros: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 2))
     fecha_carga: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     id_lote: Mapped[UUID] = mapped_column(Uuid, nullable=False)
     id_entidad: Mapped[UUID] = mapped_column(
@@ -40,7 +40,7 @@ class FctValorMetrica(Base):
 
     id_valor: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
     periodo: Mapped[date] = mapped_column(Date, nullable=False)
-    valor: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 6))
+    valor: Mapped[Optional[Decimal]] = mapped_column(Numeric(20, 6))
     valor_normalizado: Mapped[Optional[Decimal]] = mapped_column(Numeric(9, 8))
     fecha_carga: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     id_lote: Mapped[UUID] = mapped_column(Uuid, nullable=False)

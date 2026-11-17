@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 from uuid import UUID
@@ -18,9 +18,9 @@ class TblSector(Base):
   __table_args__ = {"schema": "limpia"}
 
   id_sector: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
-  nombre: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
+  nombre: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
 
-  # Relación inversa opcional
+  # RelaciÃ³n inversa opcional
   entidades: Mapped[list["TblEntidad"]] = relationship(
       back_populates="sector_rel"
   )
@@ -32,24 +32,24 @@ class TblEntidad(Base):
 
   id_entidad: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
   ticker: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
-  nombre: Mapped[str] = mapped_column(String(80), nullable=False)
+  nombre: Mapped[str] = mapped_column(String(100), nullable=False)
   id_sector: Mapped[UUID] = mapped_column(
       ForeignKey("limpia.tbl_sectores.id_sector"), nullable=False
   )
 
-  # Relación
+  # RelaciÃ³n
   sector_rel: Mapped["TblSector"] = relationship(back_populates="entidades")
 
 
 # ==========================================
-# ESQUEMA: analitica (Dimensiones y Métricas)
+# ESQUEMA: analitica (Dimensiones y MÃ©tricas)
 # ==========================================
 class DimDimension(Base):
   __tablename__ = "dim_dimension"
   __table_args__ = {"schema": "analitica"}
 
   id_dimension: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
-  nombre: Mapped[str] = mapped_column(String(30), unique=True, nullable=False)
+  nombre: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
   peso_ic: Mapped[Decimal] = mapped_column(
       Numeric(precision=4, scale=3), nullable=False, default=0
   )
@@ -61,8 +61,8 @@ class DimMetrica(Base):
 
   id_metrica: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
   codigo: Mapped[str] = mapped_column(String(10), unique=True, nullable=False)
-  nombre: Mapped[str] = mapped_column(String(50), nullable=False)
-  formula: Mapped[str] = mapped_column(String(120), nullable=False)
+  nombre: Mapped[str] = mapped_column(String(80), nullable=False)
+  formula: Mapped[str] = mapped_column(String(200), nullable=False)
   frecuencia: Mapped[str] = mapped_column(String(12), nullable=False)
   id_dimension: Mapped[UUID] = mapped_column(
       ForeignKey("analitica.dim_dimension.id_dimension"), nullable=False

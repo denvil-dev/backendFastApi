@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from Controller.LeerCsv import procesar_csv
-from Config.JwtConfig import decode_token, verificar_rol
+from src.Controller.LeerCsv import procesar_csv, registrarLoteFallido
+from src.Config.JwtConfig import decode_token, verificar_rol
 from pathlib import Path
 from uuid import uuid4
 
@@ -10,17 +10,19 @@ csv = APIRouter()
 @csv.post("/v1/validar-matriz")
 async def validar_matriz(rol: str = Depends(verificar_rol), file: UploadFile = File(...)):
     id_usuario = rol["sub"]
-    print (id_usuario)
     lote_id = str(uuid4())
+    nombre_archivo = file.filename or "matriz.csv"
 
     # 1. Validar extensión
     if not file.filename or not file.filename.lower().endswith(".csv"):
+        registrarLoteFallido(id_usuario, lote_id, nombre_archivo, 0)
         raise HTTPException(status_code=400, detail="Este archivo no es un CSV.")
 
     # 2. Validar tipo MIME
     tipos_permitidos = ["text/csv", "text/plain", "application/vnd.ms-excel"]
 
     if file.content_type not in tipos_permitidos:
+        registrarLoteFallido(id_usuario, lote_id, nombre_archivo, 0)
         raise HTTPException(
             status_code=400,
             detail=f"Tipo de contenido no permitido: {file.content_type}",
@@ -31,12 +33,19 @@ async def validar_matriz(rol: str = Depends(verificar_rol), file: UploadFile = F
         contenido_bytes = await file.read()
 
         if not contenido_bytes:
+            registrarLoteFallido(id_usuario, lote_id, nombre_archivo, 0)
             raise HTTPException(status_code=400, detail="El archivo CSV está vacío.")
 
         # 4. Delegar el procesamiento al controlador
-        resultado = await procesar_csv(id_usuario,lote_id, contenido_bytes, file.filename)
+        resultado = await procesar_csv(id_usuario, lote_id, contenido_bytes, nombre_archivo)
 
         if resultado["errores"]:
+            registrarLoteFallido(
+                id_usuario,
+                lote_id,
+                nombre_archivo,
+                resultado.get("total_filas", 0),
+            )
             raise HTTPException(
                 status_code=422,
                 detail={
